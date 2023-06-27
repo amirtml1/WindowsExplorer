@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace WindowsExplorer
 {
+    [Serializable]
     public class Node
     {
         // نام درخت
@@ -20,6 +21,7 @@ namespace WindowsExplorer
         // محتوای فایل
         public string Content { get; set; }
     }
+    [Serializable]
     public class FileSystemTree
     {
         // ریشه درخت
@@ -27,7 +29,7 @@ namespace WindowsExplorer
 
         public FileSystemTree()
         {
-            this.Root = new Node() { Name = "PC This", IsDirectory = true, Children = new List<Node>() };
+            this.Root = new Node() { Name = " This PC", IsDirectory = true, Children = new List<Node>() };
         }
 
         // تابع پیدا کردن گره با نام مشخص شده
@@ -50,33 +52,13 @@ namespace WindowsExplorer
                         return foundNode;
                 }
             }
-
+           
             return null;
         }
 
-        // تابع افزودن یک پوشه با نام مشخص شده به درخت
-        //public void AddFolder(string name, string parentName)
-        //{
-        //    var parentNode = this.FindNode(parentName);
-
-        //    if (parentNode.IsDirectory)
-        //    {
-        //        var folderNode = new Node() { Name = name, IsDirectory = true, Children = new List<Node>() };
-        //        parentNode.Children.Add(folderNode);
-        //    }
-        //}
-
-        // تابع حذف یک نود از درخت
-        //public void RemoveNode(string name)
-        //{
-        //    var parentNode = this.FindParentNode(name);
-
-        //    if (parentNode != null && parentNode.IsDirectory)
-        //    {
-        //        var nodeToRemove = parentNode.Children.FirstOrDefault(n => n.Name == name);
-        //        parentNode.Children.Remove(nodeToRemove);
-        //    }
-        //}
+       
+        
+     
 
         private Node FindParentNode(string name)
         {
@@ -100,7 +82,7 @@ namespace WindowsExplorer
 
             return null;
         }
-
+        // تابع افزودن یک پوشه با نام مشخص شده به درخت
         public void AddFolder(string name, string parentName)
         {
             var parentNode = this.FindNode(parentName);
