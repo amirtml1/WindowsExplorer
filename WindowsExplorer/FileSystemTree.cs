@@ -60,7 +60,7 @@ namespace WindowsExplorer
         
      
 
-        private Node FindParentNode(string name)
+        public Node FindParentNode(string name)
         {
             return this.FindParentNodeHelper(this.Root, name);
         }
@@ -116,34 +116,7 @@ namespace WindowsExplorer
             }
         }
 
-        public void Display()
-        {
-            Console.WriteLine("PC This");
-            DisplayHelper(this.Root, "   ");
-        }
-
-        private void DisplayHelper(Node node, string indent)
-        {
-            if (node == null)
-                return;
-
-            Console.Write(indent);
-            Console.Write("--");
-            Console.Write(node.Name);
-
-            if (!node.IsDirectory)
-                Console.Write($" ({node.Content.Length} bytes)");
-
-            Console.WriteLine();
-
-            if (node.IsDirectory)
-            {
-                foreach (var child in node.Children)
-                {
-                    DisplayHelper(child, indent + "   ");
-                }
-            }
-        }
+       
 
 
 

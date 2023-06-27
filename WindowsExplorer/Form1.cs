@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -24,6 +25,7 @@ namespace WindowsExplorer
         {
             
         }
+        public long fileSize;
         private void button4_Click(object sender, EventArgs e)
         {
             // Create a new instance of your tree and populate it with data
@@ -31,22 +33,32 @@ namespace WindowsExplorer
             // Populate the tree with nodes and data
 
             // Specify the desired file size in bytes
-            long fileSize = Convert.ToInt32(sizetextbox.Text)* 1024 ; //KB
+            fileSize = Convert.ToInt32(sizetextbox.Text)* 1024 ; //KB
 
             // Save the tree to a file with the specified file size
-            TreeSerializer.SerializeTree(myTree, "defualt.dsfs", fileSize);
+            TreeSerializer.SerializeTree(myTree, "default.dsfs", fileSize);
 
             // Load the tree from the file
-            FileSystemTree loadedTree = TreeSerializer.DeserializeTree("defualt.dsfs");
+            FileSystemTree loadedTree = TreeSerializer.DeserializeTree("default.dsfs");
 
 
             // Now you can use the loadedTree object to work with the tree data structure.
-            loadedTree.AddFolder("D", loadedTree.Root.Name);
-
-
+            
+            //save the tree back to file 
+            TreeSerializer.SerializeTree(loadedTree, "default.dsfs", fileSize);
         }
+
         public static class TreeSerializer
         {
+            public static void SerializeTree(FileSystemTree tree, string filename)
+            {
+                using (FileStream fileStream = new FileStream(filename, FileMode.Create))
+                {
+                    
+                    BinaryFormatter binaryFormatter = new BinaryFormatter();
+                    binaryFormatter.Serialize(fileStream, tree);
+                }
+            }
             public static void SerializeTree(FileSystemTree tree, string filename, long fileSize)
             {
                 using (FileStream fileStream = new FileStream(filename, FileMode.Create))
@@ -72,26 +84,23 @@ namespace WindowsExplorer
         {
             UpdateTreeView();
 
-
         }
+
+
         // UpdateTreeView method to populate the TreeView control
-        private void UpdateTreeView()
+        public void UpdateTreeView()
         {
             driveTreeView.Nodes.Clear(); // Clear existing nodes
-            FileSystemTree loadedTree = TreeSerializer.DeserializeTree("defualt.dsfs");
+            FileSystemTree loadedTree = TreeSerializer.DeserializeTree("default.dsfs");
             // Populate the TreeView with DSFS directories and files
-            foreach (var directory in loadedTree.Root.Children)
-            {
-                TreeNode directoryNode = CreateTreeNode(directory);
-                driveTreeView.Nodes.Add(directoryNode);
-            }
 
-            foreach (var file in loadedTree.Root.Children)
-            {
-                TreeNode fileNode = new TreeNode(file.Name);
-                driveTreeView.Nodes.Add(fileNode);
-            }
+
+            TreeNode directoryNode = CreateTreeNode(loadedTree.Root);
+            driveTreeView.Nodes.Add(directoryNode);
+
+         
         }
+
 
         // CreateTreeNode method to recursively create TreeNodes for directories and files
         private TreeNode CreateTreeNode(Node directory)
@@ -100,14 +109,22 @@ namespace WindowsExplorer
 
             foreach (var file in directory.Children)
             {
-                TreeNode fileNode = new TreeNode(file.Name);
-                node.Nodes.Add(fileNode);
+                if (!file.IsDirectory)
+                {
+                    TreeNode fileNode = new TreeNode(file.Name);
+                    node.Nodes.Add(fileNode);
+                }
+                
             }
 
             foreach (var subDirectory in directory.Children)
             {
-                TreeNode subDirectoryNode = CreateTreeNode(subDirectory);
-                node.Nodes.Add(subDirectoryNode);
+                if (subDirectory.IsDirectory)
+                {
+                    TreeNode subDirectoryNode = CreateTreeNode(subDirectory);
+                    node.Nodes.Add(subDirectoryNode);
+                }
+                
             }
 
             return node;
@@ -119,9 +136,6 @@ namespace WindowsExplorer
         {
             this.Close();
         }
-
-
-
 
 
 
@@ -142,15 +156,6 @@ namespace WindowsExplorer
 
 
         
-
-
-
-
-
-
-
-
-
 
 
         //متد برای اوردن فایل ها در تری ویو
@@ -200,6 +205,187 @@ namespace WindowsExplorer
             textBox1.Text = webBrowser1.Url.ToString();
         }
 
+        //load listview
+        private void button6_Click(object sender, EventArgs e)
+        {
+            UpdateListView();
+        }
 
+        public void UpdateListView()
+        {
+            fileListView.Items.Clear(); // Clear existing items
+            FileSystemTree loadedTree = TreeSerializer.DeserializeTree("default.dsfs");
+
+            // Populate the ListView with DSFS directories and files
+            foreach (var item in loadedTree.Root.Children)
+            {
+                if (item.IsDirectory)
+                {
+                    PopulateListView(item, null);
+                }
+                else
+                {
+                    ListViewItem fileItem = new ListViewItem(item.Name);
+                    fileItem.SubItems.Add("File"); // Add additional sub-items as needed
+                    fileListView.Items.Add(fileItem);
+                }
+            }
+        }
+
+        // Recursive method to populate the ListView control
+        // Recursive method to populate the ListView control
+        private void PopulateListView(Node node, ListViewItem parentItem)
+        {
+            if (node.IsDirectory)
+            {
+                ListViewItem directoryItem = new ListViewItem(node.Name);
+                directoryItem.SubItems.Add("Directory"); // Add additional sub-items as needed
+
+                if (parentItem == null)
+                {
+                    fileListView.Items.Add(directoryItem); // Add top-level directory items
+                }
+                else
+                {
+                    parentItem.SubItems.Add(new ListViewItem.ListViewSubItem(directoryItem, "Directory")); // Add subdirectory items as sub-items of parent items
+                }
+
+                foreach (var child in node.Children)
+                {
+                    if (child.IsDirectory)
+                    {
+                        PopulateListView(child, directoryItem); // Recursively process subdirectories
+                    }
+                    else
+                    {
+                        ListViewItem fileItem = new ListViewItem(child.Name);
+                        fileItem.SubItems.Add("File"); // Add additional sub-items as needed
+                        fileListView.Items.Add(fileItem); // Add file items directly to the ListView control
+                    }
+                }
+            }
+        }
+
+        private void fileListView_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            // Check if the right mouse button is clicked
+            if (e.Button == MouseButtons.Right)
+            {
+                // Get the ListViewItem at the clicked location
+                if (fileListView.GetItemAt(e.X, e.Y) is ListViewItem)
+                {
+                    // Show the context menu at the clicked location
+                    contextMenuStrip.Show(fileListView, e.Location);
+                }
+            }
+        }
+
+        private void fileListView_MouseClick(object sender, MouseEventArgs e)
+        {
+            // Check if the right mouse button is clicked
+            if (e.Button == MouseButtons.Right)
+            {
+                // Get the ListViewItem at the clicked location
+                if (fileListView.GetItemAt(e.X, e.Y) is ListViewItem)
+                {
+                    // Show the context menu at the clicked location
+                    contextMenuStrip.Show(fileListView, e.Location);
+                }
+            }
+        }
+
+        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (fileListView.SelectedItems.Count > 0)
+            {
+                ListViewItem selectedItem = fileListView.SelectedItems[0];
+                string selectedDirectory = selectedItem.Text;
+
+                fileListView.Items.Clear(); // Clear existing items
+                FileSystemTree loadedTree = TreeSerializer.DeserializeTree("default.dsfs");
+                Node node = loadedTree.FindNode(selectedDirectory);
+                // Populate the ListView with DSFS directories and files
+                foreach (var item in node.Children)
+                {
+                    if (item.IsDirectory)
+                    {
+                        PopulateListView(item, null);
+                    }
+                    else
+                    {
+                        ListViewItem fileItem = new ListViewItem(item.Name);
+                        fileItem.SubItems.Add("File"); // Add additional sub-items as needed
+                        fileListView.Items.Add(fileItem);
+                    }
+                }
+            }
+        }
+        public static string dataforform2;
+        public static bool IsOne = false;
+
+        private void newFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            IsOne = true;
+            ListViewItem selectedItem = fileListView.SelectedItems[0];
+            dataforform2= selectedItem.Text;
+            var m = new newFolder();
+            m.Show();
+            
+        }
+
+      
+
+        private void fileListView_ColumnClick(object sender, ColumnClickEventArgs e)
+        {
+
+            contextMenuStrip.Show( Cursor.Position.X, Cursor.Position.Y);
+        }
+
+        private void driveTreeView_MouseClick(object sender, MouseEventArgs e)
+        {
+            // Check if the right mouse button is clicked
+            if (e.Button == MouseButtons.Right)
+            {
+                // Get the ListViewItem at the clicked location
+                if (driveTreeView.GetNodeAt(e.X, e.Y) is TreeNode)
+                {
+                    // Show the context menu at the clicked location
+                    contextMenuStrip1.Show(driveTreeView, e.Location);
+                }
+            }
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            
+                string selectedDirectory = driveTreeView.SelectedNode.Text;
+
+                fileListView.Items.Clear(); // Clear existing items
+                FileSystemTree loadedTree = TreeSerializer.DeserializeTree("default.dsfs");
+                Node node = loadedTree.FindNode(selectedDirectory);
+                // Populate the ListView with DSFS directories and files
+                foreach (var item in node.Children)
+                {
+                    if (item.IsDirectory)
+                    {
+                        PopulateListView(item, null);
+                    }
+                    else
+                    {
+                        ListViewItem fileItem = new ListViewItem(item.Name);
+                        fileItem.SubItems.Add("File"); // Add additional sub-items as needed
+                        fileListView.Items.Add(fileItem);
+                    }
+                }
+           
+        }
+
+        private void toolStripMenuItem6_Click(object sender, EventArgs e)
+        {
+            IsOne = false;
+            dataforform2 = driveTreeView.SelectedNode.Text; 
+            var m = new newFolder();
+            m.Show();
+        }
     }
 }
