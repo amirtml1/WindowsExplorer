@@ -17,67 +17,17 @@ namespace WindowsExplorer
         {
             InitializeComponent();
         }
-        private void PopulateTreeView(TreeNode node)
-        {
-            // Clear existing nodes
-            node.Nodes.Clear();
+        
 
-            // Get the directory path from the node tag
-            string path = (string)node.Tag;
-
-            try
-            {
-                // Create a DirectoryInfo object for the directory path
-                DirectoryInfo directory = new DirectoryInfo(path);
-
-                // Get the subdirectories of the directory and create tree nodes for them
-                foreach (DirectoryInfo subdirectory in directory.GetDirectories())
-                {
-                    TreeNode subnode = new TreeNode(subdirectory.Name);
-                    subnode.Tag = subdirectory.FullName;
-                    subnode.ImageIndex = 0;
-                    subnode.SelectedImageIndex = 1;
-                    node.Nodes.Add(subnode);
-                }
-
-                // Get the files in the directory and create tree nodes for them
-                foreach (FileInfo file in directory.GetFiles())
-                {
-                    TreeNode subnode = new TreeNode(file.Name);
-                    subnode.Tag = file.FullName;
-                    subnode.ImageIndex = 2;
-                    subnode.SelectedImageIndex = 3;
-                    node.Nodes.Add(subnode);
-                }
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // If we are not authorized to access the directory, add a dummy node indicating this
-                node.Nodes.Add("Access Denied");
-            }
-        }
-
-        public FileSystemTree fileSystemTree = new FileSystemTree();
         private void Form1_Load(object sender, EventArgs e)
         {
-            // لود درخت فایل از فایل dsfs
-            var dataSaver = new DataSaver();
             
-            var rootNode = dataSaver.Load("defualt.dsfs");
-            if (rootNode != null)
-            {
-                fileSystemTree.Root = rootNode;
-                PopulateTreeView(fileSystemTree.Root);
-            }
-
         }
 
       
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // ذخیره درخت فایل در فایل dsfs
-            var dataSaver = new DataSaver();
-            dataSaver.Save(fileSystemTree, "tree.dsfs");
+            
         }
 
         private void ForwardButton_Click(object sender, EventArgs e)
@@ -88,6 +38,57 @@ namespace WindowsExplorer
         private void BackButton_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void driveTreeView_AfterSelect(object sender, TreeViewEventArgs e)
+        {
+
+        }
+
+        private void pictureBoxPreview_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            using (FolderBrowserDialog fdb = new FolderBrowserDialog() { Description = "Select your path." })
+            {
+                if (fdb.ShowDialog() == DialogResult.OK)
+                {
+                    webBrowser1.Url = new Uri(fdb.SelectedPath);
+                    textBox1.Text = fdb.SelectedPath;
+                }
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if (webBrowser1.CanGoForward)
+            {
+                webBrowser1.GoForward();
+            }
+            textBox1.Text = webBrowser1.Url.ToString();
+            
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            if (webBrowser1.CanGoBack)
+            {
+                webBrowser1.GoBack();
+            }
+            textBox1.Text = webBrowser1.Url.ToString();
+        }
+
+        private void webBrowser1_Navigated(object sender, WebBrowserNavigatedEventArgs e)
+        {
+            textBox1.Text = webBrowser1.Url.ToString();
         }
     }
 }
